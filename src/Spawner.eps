@@ -1,0 +1,27 @@
+import Dungeon;
+import Helpers;
+import Renderer;
+
+function Create(x, y, style);
+function Update() {
+
+    // 랜덤하게 던전유닛 3개까지 지정
+    // 이미 쓰고 있는 유닛은 제외
+    for (var y = 0; y < Dungeon.map_size; y++) {
+        for (var x = 0; x < Dungeon.map_size; x++) {
+            const tile = Dungeon.map[x + y * Dungeon.map_size];
+            var style;
+            if 		(tile == 0) style = -1;          			// 바깥 $U('Young Chrysalis')
+            else if (tile == 1) style = 1;                   	// 안
+            else 				style = -1; 	                // 벽
+            fill(x, y, style);
+        }
+    }
+}
+
+    // 지정한 던전 유닛을 랜덤한 위치에, 랜덤 확률로 생성. 일정수치 이상 생성하지 않음
+function Create(x, y, style) {
+    if(style == -1) return;
+    Helpers.moveLocationPx(fillLoc, x * scale + x_offset, y * scale + y_offset);
+    CreateUnit(1, style, fillLoc + 1, 7);
+}

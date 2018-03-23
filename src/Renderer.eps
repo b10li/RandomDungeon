@@ -1,0 +1,99 @@
+import Dungeon;
+import Helpers;
+
+//Renderer, main 동시선언 
+const Player_Com 	= $P8;
+
+const Unit_Floor 	= $U('Zerg Beacon');
+const Unit_Wall		= 173;
+
+const Loc_Enter		= $L('DIn');
+const Loc_Exit		= $L('DOut');
+
+var fillLoc, scale, x_offset, y_offset;
+
+function Initialize() {
+    fillLoc = $L('draw');
+    scale = 32;
+    x_offset = 4 * 32 + 16;
+    y_offset = 4 * 32 + 16;
+}
+
+function fill(x, y, style);
+function DoorEnter();
+function GetRandomDirection();
+
+function Update() {
+// 벽, 바닥생성
+    for (var y = 0; y < Dungeon.map_size; y++) {
+        for (var x = 0; x < Dungeon.map_size; x++) {
+            const tile = Dungeon.map[x + y * Dungeon.map_size];
+            var style;
+            if 		(tile == 0) style = -1;          	// 바깥
+            else if (tile == 1) style = Unit_Floor;     // 안
+            else 				style = Unit_Wall;    	// 벽
+            fill(x, y, style);
+        }
+    }
+}
+
+function DoorMake() {
+	var x = -1;
+	var y = -1;
+	// 입구
+	while(x == -1 || y == -1) {
+		x, y = DoorEnter();
+		//입구 로케 지정
+		Helpers.moveLocationPx(Loc_Enter, x * scale + x_offset, y * scale + y_offset);
+	}
+
+	// 출구. 방향전환 10회
+	for(var i=0; i<50; i++) {
+		// 이동가능 방향
+		const x2, y2 = GetRandomDirection();
+		// 이동가능 검사, 달린다
+		while(1) {
+			const tile = Dungeon.map[(x+x2) + (y+y2) * Dungeon.map_size];
+			if(tile == 1) {
+				x = x + x2;
+				y = y + y2;
+			}
+			else
+				break;
+		}
+	}
+	//출구 로케 지정
+	Helpers.moveLocationPx(Loc_Exit, x * scale + x_offset, y * scale + y_offset);
+}
+
+function GetRandomDirection() {
+	const randNum = Helpers.GetRandom(1, 5);
+	if(randNum == 1) return 0, -1;
+	if(randNum == 2) return -1, 0;
+	if(randNum == 3) return 0, 1;
+	if(randNum == 4) return 1, 0;
+}
+
+function DoorEnter() {
+    // 모든 맵 타일에 대해
+    for (var y = 0; y < Dungeon.map_size; y++) {
+        for (var x = 0; x < Dungeon.map_size; x++) {
+            const tile = Dungeon.map[x + y * Dungeon.map_size];
+            // 바닥 지형 
+            if (tile == 1) {
+            	// 일정확률 이상이면 생성
+            	if(20 >= Helpers.GetRandom(1, 100)) {
+            		return x, y;
+            	}
+            }     					
+        }
+    }
+}
+
+
+function fill(x, y, style) {
+    if(style == -1) return;
+    Helpers.moveLocationPx(fillLoc, x * scale + x_offset, y * scale + y_offset);
+    CreateUnit(1, style, fillLoc + 1, Player_Com);
+}
+

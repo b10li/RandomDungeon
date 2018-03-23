@@ -1,0 +1,149 @@
+/*------------------------------------------------
+http://jsfiddle.net/bigbadwaffle/YeazH/
+------------------------------------------------*/
+import Helpers;
+
+const map_size = 32;
+const map = EUDArray(map_size * map_size);
+const rooms = EUDArray(20);
+var room_count = 0;
+var rooms_length = 0;
+
+object Room {
+    var x, y, w, h;
+};
+function RoomsPush(room: Room) {
+    rooms[rooms_length] = room;
+    rooms_length++;
+}
+function DoesCollide(room, ignore);
+function SquashRooms();
+function FindClosestRoom(room);
+function Generate() {
+    for(var i = 0; i < map_size * map_size; i++) {
+        map[i] = 0;
+    }
+    rooms_length = 0;
+    for(var i = 0; i < 20; i++) {
+        if(rooms[i]) {
+            Room.free(rooms[i]);
+            rooms[i] = 0;
+        }
+    }
+    room_count = Helpers.GetRandom(15, 20);
+    const min_size = 3;
+    const max_size = 4;
+
+    for (var i = 0; i < room_count; i++) {
+        const room = Room.alloc();
+
+        room.x = Helpers.GetRandom(1, map_size - max_size - 1);
+        room.y = Helpers.GetRandom(1, map_size - max_size - 1);
+        room.w = Helpers.GetRandom(min_size, max_size);
+        room.h = Helpers.GetRandom(min_size, max_size);
+
+        if (DoesCollide(room, -1)) {
+            i--;
+            continue;
+        }
+        room.w--;
+        room.h--;
+
+        RoomsPush(room);
+    }
+
+    //SquashRooms();
+
+    for (var i = 0; i < room_count; i++) {
+        const roomA = Room.cast(rooms[i]);
+        const roomB = Room.cast(FindClosestRoom(roomA));
+
+        const pointA_x = Helpers.GetRandom(roomA.x, roomA.x + roomA.w);
+        const pointA_y = Helpers.GetRandom(roomA.y, roomA.y + roomA.h);
+
+        var pointB_x = Helpers.GetRandom(roomB.x, roomB.x + roomB.w);
+        var pointB_y = Helpers.GetRandom(roomB.y, roomB.y + roomB.h);
+
+        while ((pointB_x != pointA_x) || (pointB_y != pointA_y)) {
+            if (pointB_x != pointA_x) {
+                if (pointB_x > pointA_x) pointB_x--;
+                else pointB_x++;
+            } else if (pointB_y != pointA_y) {
+                if (pointB_y > pointA_y) pointB_y--;
+                else pointB_y++;
+            }
+
+            map[pointB_x + pointB_y * map_size] = 1;
+        }
+    }
+
+    for (var i = 0; i < room_count; i++) {
+        const room = Room.cast(rooms[i]);
+        for (var x = room.x; x < room.x + room.w; x++) {
+            for (var y = room.y; y < room.y + room.h; y++) {
+                map[x + y * map_size] = 1;
+            }
+        }
+    }
+
+    for (var x = 0; x < map_size; x++) {
+        for (var y = 0; y < map_size; y++) {
+            if (map[x + y * map_size] == 1) {
+                for (var xx = x - 1; xx <= x + 1; xx++) {
+                    for (var yy = y - 1; yy <= y + 1; yy++) {
+                        if (map[xx + yy * map_size] == 0) map[xx + yy * map_size] = 2;
+                    }
+                }
+            }
+        }
+    }
+}
+function FindClosestRoom(room) {
+    const room = Room.cast(room);
+    const mid_x = room.x + (room.w / 2);
+    const mid_y = room.y + (room.h / 2);
+    var closest;
+    var closest_distance = 1000;
+    for (var i = 0; i < rooms_length; i++) {
+        const check = Room.cast(rooms[i]);
+        if (check == room) continue;
+        const check_mid_x = check.x + (check.w / 2);
+        const check_mid_y = check.y + (check.h / 2);
+        const distance = Helpers.min(Helpers.abs(mid_x - check_mid_x) - (room.w / 2) - (check.w / 2), Helpers.abs(mid_y - check_mid_y) - (room.h / 2) - (check.h / 2));
+        if (distance < closest_distance) {
+            closest_distance = distance;
+            closest = check;
+        }
+    }
+    return closest;
+}
+function SquashRooms() {
+    for (var i = 0; i < 10; i++) {
+        for (var j = 0; j < rooms_length; j++) {
+            const room = Room.cast(rooms[j]);
+            while (1) {
+                const old_position_x = room.x;
+                const old_position_y = room.y;
+                if (room.x > 1) room.x = room.x - 1;
+                if (room.y > 1) room.y = room.y - 1;
+                if (room.x == 1 && room.y == 1) break;
+                if (DoesCollide(room, j)) {
+                    room.x = old_position_x;
+                    room.y = old_position_y;
+                    break;
+                }
+                if (room.x == 0 || room.y == 0) break;
+            }
+        }
+    }
+}
+function DoesCollide(room, ignore) {
+    const room = Room.cast(room);
+    for (var i = 0; i < rooms_length; i++) {
+        if (i == ignore) continue;
+        const check = Room.cast(rooms[i]);
+        if (!((room.x + room.w < check.x) || (room.x > check.x + check.w) || (room.y + room.h < check.y) || (room.y > check.y + check.h))) return 1;
+    }
+
+    return 0;
+}

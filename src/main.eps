@@ -1,0 +1,44 @@
+import Dungeon;
+import Renderer;
+import Helpers;
+
+//Renderer, main 동시선언 
+const Player_Com    = $P8;
+const Loc_Enter		= $L('DIn');
+const Loc_Exit		= $L('DOut');
+
+function onPluginStart() {
+	Helpers.setpcolor(Player_Com, 40);  // 검정색 mk.2
+		SetMemory(0x661534, SetTo, 29819343);
+		SetMemory(0x661D30, SetTo, 1048592);
+		SetMemory(0x661D34, SetTo, 983055);
+		SetMemory(0x661DD8, SetTo, 65537);
+		SetMemory(0x661DDC, SetTo, 65537);
+		SetMemory(0x662B14, SetTo, 2097184);
+		SetMemory(0x662B68, SetTo, 65537);
+		SetMemory(0x664334, SetTo, 603979776);
+		SetMemory(0x664388, SetTo, 536870912);
+		SetMemory(0x665B10, SetTo, 100993024);
+		SetMemory(0x665B58, SetTo, 84213767);
+		SetMemory(0x666304, SetTo, 11731551);
+		SetMemory(0x666394, SetTo, 39649633);
+    randomize();
+    Renderer.Initialize();
+}
+ //
+
+function beforeTriggerExec() {
+    if(Bring(P1, Exactly, 0, 47, 'update') || Bring(P1, AtLeast, 1, 37, Loc_Exit +1)) {
+        MoveUnit(All, 37, P1, 'Anywhere', 'wait');
+        MoveUnit(All, 47, P1, 'Anywhere', 'update');
+
+        RemoveUnit('(any unit)', Player_Com);
+        Dungeon.Generate();
+        Renderer.Update();
+        Renderer.DoorMake();
+
+        CreateUnit(1, 47, Loc_Exit +1, Player_Com);
+        MoveUnit(All, 37, P1, 'Anywhere', Loc_Enter+1);
+    }
+
+}
